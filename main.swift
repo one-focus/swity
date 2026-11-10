@@ -66,19 +66,39 @@ var tap: CFMachPort?
 var denied = false  // this process was told "no access" and may go on believing it after a grant
 var undo: TISInputSource?  // layout from before the switch, while fn is still held
 
-// Switch the moment fn goes down. ctrl/alt/cmd/shift already held = a shortcut, skip.
+// A keyboard without 🌐 fn (a Windows one, or one whose fn never leaves the keyboard) switches with left
+// Control, the key in fn's corner. Unlike fn it is an everyday modifier, so the switch waits for the release:
+// a short press with nothing else in between (no key, no click, no other modifier).
+// A keyboard with 🌐 fn keeps Control for what it is. Which ones have it is learned, not looked up: a keyboard
+// type that has ever sent fn is remembered, and Control is left alone on it from then on.
+// Kept simple: two keyboards of the same type, one with fn and one without, are both taken as having it.
+var armed: CFAbsoluteTime?  // when left Control went down alone
+let longestTap = 0.4  // held longer, it was held for something else (ctrl+scroll, ctrl+drag)
+var withFn = Set(UserDefaults.standard.array(forKey: "keyboardsWithFn") as? [Int] ?? [])
+var lastKeyboard: Int64 = 0  // type of the keyboard the last modifier came from
+
+// fn: switch the moment it goes down. ctrl/alt/cmd/shift already held = a shortcut, skip.
 // A key pressed while fn is held makes it a combo (fn+arrow, fn+delete, fn+F): the switch is taken back.
 // Key presses are only counted as "a key went down with fn held"; which key it was is never read.
 let callback: CGEventTapCallBack = { _, type, event, _ in
+    let code = event.getIntegerValueField(.keyboardEventKeycode)
+    if type == .flagsChanged { lastKeyboard = event.getIntegerValueField(.keyboardEventKeyboardType) }
     if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
         undo = nil  // fn may be released while the tap is off
+        armed = nil
         if let tap = tap { CGEvent.tapEnable(tap: tap, enable: true) }
     } else if type == .keyDown {
+        armed = nil
         if let before = undo, event.flags.contains(.maskSecondaryFn) {
             undo = nil
             TISSelectInputSource(before)
         }
-    } else if event.getIntegerValueField(.keyboardEventKeycode) == 63 {  // kVK_Function
+    } else if type != .flagsChanged {
+        armed = nil  // a mouse button
+    } else if code == 63 {  // kVK_Function
+        if event.flags.contains(.maskSecondaryFn), withFn.insert(Int(lastKeyboard)).inserted {
+            UserDefaults.standard.set(Array(withFn), forKey: "keyboardsWithFn")
+        }
         if event.flags.contains(.maskSecondaryFn),
            event.flags.isDisjoint(with: [.maskShift, .maskControl, .maskAlternate, .maskCommand]) {
             undo = TISCopyCurrentKeyboardInputSource().takeRetainedValue()
@@ -86,6 +106,15 @@ let callback: CGEventTapCallBack = { _, type, event, _ in
         } else {
             undo = nil  // fn released
         }
+    } else if code == 59, !withFn.contains(Int(lastKeyboard)) {  // kVK_Control, the left one
+        if event.flags.contains(.maskControl) {  // down
+            armed = event.flags.isDisjoint(with: [.maskShift, .maskAlternate, .maskCommand, .maskSecondaryFn]) ? CFAbsoluteTimeGetCurrent() : nil
+        } else {
+            if let since = armed, CFAbsoluteTimeGetCurrent() - since < longestTap { switchLayout() }
+            armed = nil
+        }
+    } else {
+        armed = nil  // another modifier
     }
     return Unmanaged.passUnretained(event)
 }
@@ -93,9 +122,11 @@ let callback: CGEventTapCallBack = { _, type, event, _ in
 // Runs every 2 s until the tap exists, i.e. while waiting for Input Monitoring access.
 func start() {
     guard tap == nil else { return }
+    // Modifiers for the keys themselves; key and mouse downs only as "something else happened meanwhile"
+    let watched: [CGEventType] = [.flagsChanged, .keyDown, .leftMouseDown, .rightMouseDown, .otherMouseDown]
     guard allowed() else { denied = true; return }
     guard let t = CGEvent.tapCreate(tap: .cghidEventTap, place: .headInsertEventTap, options: .listenOnly,
-                                    eventsOfInterest: 1 << CGEventType.flagsChanged.rawValue | 1 << CGEventType.keyDown.rawValue,
+                                    eventsOfInterest: watched.reduce(CGEventMask(0)) { $0 | 1 << $1.rawValue },
                                     callback: callback, userInfo: nil)
     else {  // granted, but this process still holds the old answer: only a new one can make the tap
         if denied { denied = false; try? relaunch() }

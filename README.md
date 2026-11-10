@@ -38,6 +38,9 @@ To remove it, quit Swity from its menu bar icon and move it to the Trash.
 - 🌐 fn switches to the next input source you have turned on, input methods such as Pinyin,
   Japanese and Korean included.
 - fn held with another key (fn+arrow, fn+delete) is a shortcut, not a switch.
+- A keyboard without 🌐 fn, or one whose fn never reaches the Mac (many Windows and third-party
+  keyboards), switches with a short press of left Control. Control held with another key, a click or
+  a longer hold stays plain Control, and a keyboard with fn keeps Control as it is.
 - While Swity runs, the system's "Press 🌐 key to" is set to "Do Nothing", so nothing switches
   twice. Your own setting comes back when Swity quits.
 - It starts with your Mac and updates itself from swity.io.
@@ -46,8 +49,8 @@ To remove it, quit Swity from its menu bar icon and move it to the Trash.
 
 Swity collects nothing. It goes online only to check swity.io for an update and to download one.
 
-Input Monitoring lets it see the modifier keys, and that some key went down while 🌐 fn was held.
-Which key it was is never read, stored or sent. The whole app is one file,
+Input Monitoring lets it see the modifier keys, and that some other key or a mouse button went down
+while one of them was held. Which key it was is never read, stored or sent. The whole app is one file,
 [`main.swift`](main.swift), so you can check.
 
 ## Build from source
