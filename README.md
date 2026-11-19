@@ -28,10 +28,12 @@ signed and notarized.
 
 1. [Download Swity.dmg](https://github.com/one-focus/swity/releases/latest/download/Swity.dmg) and
    drag Swity to Applications.
-2. Open it and allow **Input Monitoring** when it asks. That is how it sees the 🌐 fn key.
+2. Open it, click **Grant Access** and drag Swity into the **Input Monitoring** list. That is how
+   it sees the 🌐 fn key.
 3. Press 🌐 fn.
 
-To remove it, quit Swity from its menu bar icon and move it to the Trash.
+Click the menu bar icon for access status and switch keys. To remove Swity, right-click the icon,
+quit, and move it to the Trash.
 
 ## How it works
 
@@ -41,6 +43,8 @@ To remove it, quit Swity from its menu bar icon and move it to the Trash.
 - A keyboard without 🌐 fn, or one whose fn never reaches the Mac (many Windows and third-party
   keyboards), switches with a short press of left Control. Control held with another key, a click or
   a longer hold stays plain Control, and a keyboard with fn keeps Control as it is.
+- If your little finger lands next to fn, add left Control or left Option as an extra switch key in
+  the menu bar panel. A short press on its own switches; fn keeps working too.
 - While Swity runs, the system's "Press 🌐 key to" is set to "Do Nothing", so nothing switches
   twice. Your own setting comes back when Swity quits.
 - It starts with your Mac and updates itself from swity.io.
@@ -50,7 +54,8 @@ To remove it, quit Swity from its menu bar icon and move it to the Trash.
 Swity collects nothing. It goes online only to check swity.io for an update and to download one.
 
 Input Monitoring lets it see the modifier keys, and that some other key or a mouse button went down
-while one of them was held. Which key it was is never read, stored or sent. The whole app is one file,
+while one of them was held. Which key it was is never read, stored or sent. The one exception is
+the panel's "Add Extra Key", which reads the key you press in it to set it as the switch. The whole app is one file,
 [`main.swift`](main.swift), so you can check.
 
 ## Build from source

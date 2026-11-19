@@ -75,6 +75,6 @@ END
     printf '{"version": "%s", "url": "https://github.com/one-focus/swity/releases/download/v%s/Swity.dmg"}\n' "$V" "$V" > version.json
     exit
 fi
-if [ "$ID" = "-" ]; then codesign -f -s - "$APP"; else codesign -f -o runtime -s "$ID" "$APP"; fi
+if [ "$ID" = "-" ]; then codesign -f -s - "$APP"; else codesign -f -o runtime --timestamp=none -s "$ID" "$APP"; fi  # local: no trip to the timestamp server
 pkill -x Swity && while pgrep -qx Swity; do sleep 0.1; done  # else open hits the dying instance
 open "$APP"
